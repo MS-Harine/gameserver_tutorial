@@ -1,5 +1,5 @@
 #include "os.h"
-#include "poller.h"
+#include "reactor.h"
 #include <string>
 #include <cstring>
 #include <stdexcept>
@@ -58,22 +58,16 @@ bool Epoll::remove(std::shared_ptr<Session> session)
         return false;
     
     int sock = session->get_sock()->get_native_handle();
-    decltype(session_map_.end()) iter;
-    {
-        std::lock_guard<std::mutex> lock(session_map_lock_);
-        iter = session_map_.find(sock);
-        if (iter == session_map_.end())
-            return false;  
-    }
+    std::lock_guard<std::mutex> lock(session_map_lock_);
+    auto iter = session_map_.find(sock);
+    if (iter == session_map_.end())
+        return false;  
 
     if (epoll_ctl(epoll_fd_, EPOLL_CTL_DEL, sock, nullptr) == -1)
         return false;
     
     session->get_sock()->close();
-    {
-        std::lock_guard<std::mutex> lock(session_map_lock_);
-        session_map_.erase(iter);
-    }
+    session_map_.erase(iter);
     return true;
 }
 
@@ -119,19 +113,22 @@ void Epoll::poll(std::stop_token token, EventCallback cb)
             // Read
             if (events[i].events & EPOLLIN)
             {
-                auto& recv_buffer = session->get_recv_buffer();
-                ssize_t bytes_read = read(client_sock, recv_buffer.data(), recv_buffer.size());
+                std::array<std::byte, 4096> buffer;
+                ssize_t bytes_read = read(client_sock, buffer.data(), buffer.size());
 
-                if (bytes_read >= 0)
+                if (bytes_read > 0)
                 {
+                    auto& recv_buffer = session->get_recv_buffer();
+                    recv_buffer.insert(recv_buffer.end(), buffer.begin(), buffer.begin() + bytes_read);
+
                     std::size_t consumed = cb(session, bytes_read, false);
                     session->consume_recv_buffer(consumed);
-
-                    if (bytes_read == 0)
-                    {
-                        close_session(session);
-                        continue;
-                    }
+                }
+                else if (bytes_read == 0)
+                {
+                    cb(session, bytes_read, false);
+                    close_session(session);
+                    continue;
                 }
                 else
                 {
@@ -151,12 +148,15 @@ void Epoll::poll(std::stop_token token, EventCallback cb)
                 auto& send_buffer = session->get_send_buffer();
                 if (send_buffer.empty() == false)
                 {
-                    ssize_t bytes_written = write(client_sock, send_buffer.data(), send_buffer.size());
-
-                    if (bytes_written > 0)
                     {
-                        std::size_t consumed = cb(session, bytes_written, true);
-                        session->consume_send_buffer(consumed);
+                        std::lock_guard<std::mutex> lock(write_lock_);
+                        ssize_t bytes_written = write(client_sock, send_buffer.data(), send_buffer.size());
+
+                        if (bytes_written > 0)
+                        {
+                            std::size_t consumed = cb(session, bytes_written, true);
+                            session->consume_send_buffer(consumed);
+                        }
                     }
 
                     if (send_buffer.empty())
@@ -195,7 +195,7 @@ void Epoll::close_session(std::shared_ptr<Session> session)
 
 uint32_t Epoll::create_flag(Event event)
 {
-    uint32_t flag = EPOLLET | EPOLLRDHUP;
+    uint32_t flag = EPOLLRDHUP;
     if (event & Event::READ) flag |= EPOLLIN;
     if (event & Event::WRITE) flag |= EPOLLOUT;
     return flag;
@@ -207,16 +207,13 @@ bool Epoll::send(std::shared_ptr<Session> session, const std::vector<std::byte>&
         return false;
 
     int sock = session->get_sock()->get_native_handle();
-    decltype(session_map_.begin()) iter;
-    {
-        std::lock_guard<std::mutex> lock(session_map_lock_);
-        iter = session_map_.find(sock);
-        if (iter == session_map_.end())
-            return false;
-    }
+    std::lock_guard<std::mutex> lock(session_map_lock_);
+    auto iter = session_map_.find(sock);
+    if (iter == session_map_.end())
+        return false;
 
     auto& send_buffer = session->get_send_buffer();
-    std::lock_guard<std::mutex> lock(write_lock_);
+    std::lock_guard<std::mutex> write_lock(write_lock_);
     send_buffer.insert(send_buffer.end(), data.begin(), data.end());
 
     auto& [s, current_event] = iter->second;

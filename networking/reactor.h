@@ -1,5 +1,5 @@
-#ifndef __POLLER_H__
-#define __POLLER_H__
+#ifndef __REACTOR_H__
+#define __REACTOR_H__
 
 #include "os.h"
 #include "session.h"
@@ -11,7 +11,7 @@
 #include <stop_token>
 #include <mutex>
 
-class Poller
+class Reactor
 {
 public:
     enum Event : uint8_t
@@ -25,7 +25,7 @@ public:
     using EventCallback = std::function<std::size_t(std::shared_ptr<Session>, std::ptrdiff_t, bool)>;
 
 public:
-    virtual ~Poller() = default;
+    virtual ~Reactor() = default;
 
     virtual bool add(std::shared_ptr<Session> session, Event event) = 0;
     virtual bool remove(std::shared_ptr<Session> session) = 0;
@@ -35,7 +35,7 @@ public:
 
 #ifdef WINDOWS
 #else
-class Epoll : public Poller
+class Epoll : public Reactor
 {
 public:
     Epoll();
@@ -66,4 +66,4 @@ using SysPoller =
 #endif
 ;
 
-#endif // __POLLER_H__
+#endif // __REACTOR_H__

@@ -10,9 +10,10 @@
 class Session : public std::enable_shared_from_this<Session>
 {
 public:
-    Session(std::shared_ptr<Socket> sock, size_t buffer_size = 4096): sock_(sock)
+    Session(std::shared_ptr<Socket> sock)
+        : sock_(sock)
     {
-        recv_buffer.resize(buffer_size);
+        
     }
     
     void set_data(auto&& data)

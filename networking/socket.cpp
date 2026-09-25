@@ -19,6 +19,24 @@ Socket::~Socket()
     close();
 }
 
+Socket::Socket(Socket&& other)
+    : handle_(other.handle_), addr_(other.addr_)
+{
+    other.handle_ = INVALID_HANDLE;
+}
+
+Socket& Socket::operator=(Socket&& other)
+{
+    if (this != &other)
+    {
+        close();
+        handle_ = other.handle_;
+        addr_ = other.addr_;
+        other.handle_ = INVALID_HANDLE;
+    }
+    return *this;
+}
+
 Socket::native_handle_t Socket::get_native_handle()
 {
     return handle_;

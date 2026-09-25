@@ -39,7 +39,7 @@ bool Acceptor::ready(uint16_t port, int backlog)
 std::shared_ptr<Socket> Acceptor::accept()
 {
     Socket::sockaddr_in_t addr;
-    Socket::socklen_t_t addr_len = sizeof(addr);
+    Socket::socklen_t addr_len = sizeof(addr);
 
 #ifdef OS_WINDOWS
 #else

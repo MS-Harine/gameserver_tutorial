@@ -9,6 +9,8 @@
 #include <netinet/in.h>
 #endif
 
+#include <vector>
+
 class Socket
 {
 public:
@@ -21,7 +23,7 @@ public:
     using native_handle_t = int;
     constexpr static native_handle_t INVALID_HANDLE = -1;
     using sockaddr_in_t = sockaddr_in;
-    using socklen_t_t = socklen_t;
+    using socklen_t = ::socklen_t;
 #endif
 
 public:
@@ -31,8 +33,8 @@ public:
 
     Socket(const Socket&) = delete;
     Socket& operator=(const Socket&) = delete;
-    Socket(Socket&&) = default;
-    Socket& operator=(Socket&&) = default;
+    Socket(Socket&&);
+    Socket& operator=(Socket&&);
 
     native_handle_t get_native_handle();
     void close();
