@@ -7,7 +7,6 @@
 #include <shared_mutex>
 #include "socket.h"
 #include "user.h"
-#include <iostream>
 
 class Session;
 
@@ -30,7 +29,6 @@ public:
     {
         for (auto [_, user] : users_)
         {
-            std::cout << "Here? " << user->get_user_id() << ", " << sizeof(packet) << std::endl;
             user->send(packet);
         }
     }
@@ -42,7 +40,6 @@ public:
         {
             if (user->get_user_id() == target_user->get_user_id())
                 continue;
-            std::cout << "Here2? " << user->get_user_id() << ", " << sizeof(packet) << std::endl;
             user->send(packet);
         }
     }

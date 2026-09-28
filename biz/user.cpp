@@ -12,6 +12,16 @@ User::userid_t User::get_user_id() const
     return user_id_;
 }
 
+void User::set_username(std::string str)
+{
+    username_ = std::move(str);
+}
+
+const std::string& User::get_username() const
+{
+    return username_;
+}
+
 void User::send(const std::vector<std::byte>& data)
 {
     if (session_->send(data) == false)

@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <concepts>
+#include <string>
 
 class Session;
 
@@ -16,6 +17,8 @@ public:
     User(std::shared_ptr<Session> session, userid_t user_id);
 
     userid_t get_user_id() const;
+    void set_username(std::string str);
+    const std::string& get_username() const;
 
     template <typename PacketType>
     requires requires(const PacketType& p) {
@@ -32,6 +35,7 @@ private:
 private:
     std::shared_ptr<Session> session_;
     userid_t user_id_;
+    std::string username_;
 };
 
 #endif // __USER_H__

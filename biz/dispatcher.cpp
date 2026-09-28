@@ -73,9 +73,15 @@ Error Dispatcher::handle_connect(std::shared_ptr<User> user, const Packet::C2S_C
     send_packet.username = packet.username;
     send_packet.is_other_user = true;
     world_->broadcast_except_user(send_packet, user);
+    user->set_username(packet.username);
 
-    send_packet.is_other_user = false;
-    user->send(send_packet);
+    for (auto& other_user : world_->get_users())
+    {
+        send_packet.userid = other_user->get_user_id();
+        send_packet.username = other_user->get_username();
+        send_packet.is_other_user = other_user->get_user_id() != user->get_user_id();
+        user->send(send_packet);
+    }
 
     return Error::None;
 }
