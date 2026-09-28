@@ -16,13 +16,21 @@ OBJS := $(patsubst %.cpp, $(OBJDIR)/%.o, $(SRCS))
 TARGET_DIR = bin
 TARGET = $(TARGET_DIR)/gameserver
 
+# Packet generation
+PACKET_GEN := packet/packet_gen.py
+PACKET_JSON := packet/packet.json
+PACKET_HEADER := packet/packets_generated.h
+
 all: $(TARGET)
+
+$(PACKET_HEADER): $(PACKET_JSON) $(PACKET_GEN)
+	python3 $(PACKET_GEN)
 
 $(TARGET): $(OBJS)
 	@mkdir -p $(TARGET_DIR)
 	$(CXX) $(CXXFLAGS) $(INC_FLAGS) -o $(TARGET) $(OBJS)
 
-$(OBJDIR)/%.o: %.cpp
+$(OBJDIR)/%.o: %.cpp $(PACKET_HEADER)
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) $(INC_FLAGS) -c $< -o $@
 

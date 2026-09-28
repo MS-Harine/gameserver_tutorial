@@ -1,8 +1,10 @@
 #include "os.h"
 #include "reactor.h"
+#include "socket.h"
 #include <string>
 #include <cstring>
 #include <stdexcept>
+#include <iostream>
 
 #ifdef OS_LINUX
 #include "sys/epoll.h"
@@ -151,6 +153,7 @@ void Epoll::poll(std::stop_token token, EventCallback cb)
                     {
                         std::lock_guard<std::mutex> lock(write_lock_);
                         ssize_t bytes_written = write(client_sock, send_buffer.data(), send_buffer.size());
+                        std::cout << "Send to " << client_sock << ", Byte : " << bytes_written << " / " << send_buffer.size() << std::endl;
 
                         if (bytes_written > 0)
                         {
@@ -165,7 +168,7 @@ void Epoll::poll(std::stop_token token, EventCallback cb)
                         auto iter = session_map_.find(client_sock);
                         if (iter == session_map_.end())
                             continue;
-                        auto current_event = iter->second.second;
+                        auto& current_event = iter->second.second;
 
                         current_event = static_cast<Event>(current_event & ~Event::WRITE);
                         struct epoll_event ev;

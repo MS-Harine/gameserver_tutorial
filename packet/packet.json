@@ -1,0 +1,61 @@
+{
+    "packets": [
+        {
+            "id": 1,
+            "name": "Connect",
+            "client": {
+                "username": { "type": "string" }
+            },
+            "server": {
+                "userid": { "type": "int", "size": 4 },
+                "username": { "type": "string" },
+                "is_other_user": { "type": "bool", "size": 1 }
+            }
+        },
+        {
+            "id": 2,
+            "name": "Disconnect",
+            "client": {},
+            "server": {
+                "userid": { "type": "int", "size": 4 },
+                "reason": { "type": "string" }
+            }
+        },
+        {
+            "id": 3,
+            "name": "SetPosition",
+            "client": {
+                "x": { "type": "float", "size": 8 },
+                "y": { "type": "float", "size": 8 },
+                "facing_right": { "type": "bool", "size": 1 },
+                "reset_velocity": { "type": "bool", "size": 1 }
+            },
+            "server": {
+                "userid": { "type": "int", "size": 4 },
+                "x": { "type": "float", "size": 8 },
+                "y": { "type": "float", "size": 8 },
+                "facing_right": { "type": "bool", "size": 1 },
+                "reset_velocity": { "type": "bool", "size": 1 }
+            }
+        },
+        {
+            "id": 4,
+            "name": "Move",
+            "client": {
+                "x": { "type": "float", "size": 8 },
+                "y": { "type": "float", "size": 8 },
+                "vx": { "type": "float", "size": 8 },
+                "vy": { "type": "float", "size": 8 },
+                "facing_right": { "type": "bool", "size": 1 }
+            },
+            "server": {
+                "userid": { "type": "int", "size": 4 },
+                "x": { "type": "float", "size": 8 },
+                "y": { "type": "float", "size": 8 },
+                "vx": { "type": "float", "size": 8 },
+                "vy": { "type": "float", "size": 8 },
+                "facing_right": { "type": "bool", "size": 1 }
+            }
+        }
+    ]
+}

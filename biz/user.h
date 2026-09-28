@@ -2,6 +2,8 @@
 #define __USER_H__
 
 #include <memory>
+#include <vector>
+#include <concepts>
 
 class Session;
 
@@ -14,6 +16,18 @@ public:
     User(std::shared_ptr<Session> session, userid_t user_id);
 
     userid_t get_user_id() const;
+
+    template <typename PacketType>
+    requires requires(const PacketType& p) {
+        { p.serialize() } -> std::same_as<std::vector<std::byte>>;
+    }
+    void send(const PacketType& packet)
+    {
+        send(packet.serialize());
+    }
+
+private:
+    void send(const std::vector<std::byte>& data);
 
 private:
     std::shared_ptr<Session> session_;

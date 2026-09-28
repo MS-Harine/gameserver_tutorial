@@ -5,12 +5,16 @@
 #include <memory>
 #include <mutex>
 #include <shared_mutex>
+#include <iostream>
 
 std::shared_ptr<User> World::add_user(std::shared_ptr<Session> session)
 {
     std::unique_lock<std::shared_mutex> guard(rw_mutex_);
     auto user = std::make_shared<User>(session, unique_user_id_.fetch_add(1));
     users_[session->get_sock()->get_native_handle()] = user;
+    
+    std::cout << "[WORLD] user socket " << session->get_sock()->get_native_handle() << " - user id " << user->get_user_id() << std::endl;
+
     return user;
 }
 
@@ -34,6 +38,16 @@ std::shared_ptr<User> World::get_user(Socket::native_handle_t sock_handle, raw_t
         return iter->second;
     }
     return nullptr;
+}
+
+std::vector<std::shared_ptr<User>> World::get_users() const
+{
+    std::vector<std::shared_ptr<User>> users;
+    for (auto [_, user] : users_)
+    {
+        users.push_back(user);
+    }
+    return users;
 }
 
 void World::remove_user(User::userid_t user_id)

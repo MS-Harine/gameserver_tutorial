@@ -5,6 +5,7 @@
 #include "packet.h"
 #include "dispatcher.h"
 #include <stop_token>
+#include <iostream>
 
 Bootstraper::Bootstraper() = default;
 
@@ -70,9 +71,11 @@ void Bootstraper::accept_work(std::stop_token token, int port)
         if (client_sock == nullptr)
             continue;
         
-        auto session = std::make_shared<Session>(client_sock);
+        auto session = std::make_shared<Session>(reactor_, client_sock);
         reactor_->add(session, Reactor::Event::READ);
         world_->add_user(session);
+
+        std::cout << "[CONNECTION] new user socket : " << session->get_sock()->get_native_handle() << std::endl;
     }
 }
 
@@ -92,6 +95,7 @@ void Bootstraper::reactor_work(std::stop_token token)
         if (byte_transmit <= 0) // Connection closed
         {
             world_->remove_user(session->get_sock()->get_native_handle(), World::raw_type_t);
+            std::cout << "[CONNECTION] disconnect user socket : " << session->get_sock()->get_native_handle() << std::endl;
             return byte_transmit;
         }
 

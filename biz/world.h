@@ -7,6 +7,7 @@
 #include <shared_mutex>
 #include "socket.h"
 #include "user.h"
+#include <iostream>
 
 class Session;
 
@@ -20,8 +21,31 @@ public:
     std::shared_ptr<User> add_user(std::shared_ptr<Session> session);
     std::shared_ptr<User> get_user(User::userid_t user_id) const;
     std::shared_ptr<User> get_user(Socket::native_handle_t sock_handle, raw_type) const;
+    std::vector<std::shared_ptr<User>> get_users() const;
     void remove_user(User::userid_t user_id);
     void remove_user(Socket::native_handle_t sock_handle, raw_type);
+
+    template <typename T>
+    void broadcast(T packet)
+    {
+        for (auto [_, user] : users_)
+        {
+            std::cout << "Here? " << user->get_user_id() << ", " << sizeof(packet) << std::endl;
+            user->send(packet);
+        }
+    }
+
+    template <typename T>
+    void broadcast_except_user(T packet, std::shared_ptr<User> target_user)
+    {
+        for (auto [_, user] : users_)
+        {
+            if (user->get_user_id() == target_user->get_user_id())
+                continue;
+            std::cout << "Here2? " << user->get_user_id() << ", " << sizeof(packet) << std::endl;
+            user->send(packet);
+        }
+    }
 
 private:
     std::map<Socket::native_handle_t, std::shared_ptr<User>> users_;
