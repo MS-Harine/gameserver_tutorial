@@ -41,6 +41,8 @@ bool Bootstraper::initialize_network(int port)
         return false;
     }
 
+    std::cout << "Server opened with port " << port << std::endl;
+
     accept_thread_ = std::jthread([this](std::stop_token token) {
         accept_work(token);
     });

@@ -100,6 +100,9 @@ Error Dispatcher::handle_connect(std::shared_ptr<User> user, const Packet::C2S_C
         send_packet.is_other_user = other_user->get_user_id() != user->get_user_id();
         user->send(send_packet);
 
+        if (other_user->get_user_id() == user->get_user_id())
+            continue;
+        
         auto user_pos = other_user->get_pos();
         Packet::S2C_SetPosition pos_packet;
         pos_packet.x = user_pos.x;
@@ -114,6 +117,8 @@ Error Dispatcher::handle_connect(std::shared_ptr<User> user, const Packet::C2S_C
 
 Error Dispatcher::handle_disconnect(std::shared_ptr<User> user, [[ maybe_unused ]] const Packet::C2S_Disconnect& packet)
 {
+    std::cout << "[CONNECTION] disconnect user id : " << user->get_user_id() << std::endl;
+
     user->disconnect();
     if (world_->remove_user(user->get_user_id()) == false)
         return Error::None;

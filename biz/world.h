@@ -49,7 +49,7 @@ public:
 
 private:
     std::map<Socket::native_handle_t, std::shared_ptr<User>> users_;
-    std::atomic<User::userid_t> unique_user_id_{0};
+    std::atomic<User::userid_t> unique_user_id_{ 1 };
     mutable std::shared_mutex rw_mutex_;
 };
 
