@@ -36,10 +36,7 @@ void Session::consume_recv_buffer(size_t bytes)
 {
     recv_buffer.erase(
         recv_buffer.begin(), 
-        std::min(
-            recv_buffer.begin() + std::min(bytes, recv_buffer.size()), 
-            recv_buffer.end()
-        )
+        recv_buffer.begin() + std::min(bytes, recv_buffer.size())
     );
 }
 
@@ -47,10 +44,7 @@ void Session::consume_send_buffer(size_t bytes)
 {
     send_buffer.erase(
         send_buffer.begin(), 
-        std::min(
-            send_buffer.begin() + std::min(bytes, recv_buffer.size()), 
-            send_buffer.end()
-        )
+        send_buffer.begin() + std::min(bytes, send_buffer.size())
     );
 }
 
