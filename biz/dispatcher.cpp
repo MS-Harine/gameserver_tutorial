@@ -99,6 +99,14 @@ Error Dispatcher::handle_connect(std::shared_ptr<User> user, const Packet::C2S_C
         send_packet.username = other_user->get_username();
         send_packet.is_other_user = other_user->get_user_id() != user->get_user_id();
         user->send(send_packet);
+
+        auto user_pos = other_user->get_pos();
+        Packet::S2C_SetPosition pos_packet;
+        pos_packet.x = user_pos.x;
+        pos_packet.y = user_pos.y;
+        pos_packet.facing_right = user_pos.facing_right;
+        pos_packet.reset_velocity = true;
+        user->send(pos_packet);
     }
 
     return Error::None;
@@ -119,6 +127,8 @@ Error Dispatcher::handle_disconnect(std::shared_ptr<User> user, [[ maybe_unused 
 
 Error Dispatcher::handle_set_position(std::shared_ptr<User> user, const Packet::C2S_SetPosition& packet)
 {
+    user->set_pos(packet.x, packet.y, packet.facing_right);
+
     Packet::S2C_SetPosition send_packet;
     send_packet.userid = user->get_user_id();
     send_packet.x = packet.x;

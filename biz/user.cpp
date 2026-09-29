@@ -50,3 +50,14 @@ void User::set_login(bool state)
 {
     logined_ = state;
 }
+
+User::PosInfo User::get_pos() const
+{
+    return { pos_.first, pos_.second, facing_right_ };
+}
+
+void User::set_pos(float x, float y, bool facing_right)
+{
+    pos_ = { x, y };
+    facing_right_ = facing_right;
+}

@@ -35,6 +35,16 @@ public:
     
     bool is_login() const;
     void set_login(bool state);
+    
+public:
+    struct PosInfo
+    {
+        float x;
+        float y;
+        bool facing_right;
+    };
+    PosInfo get_pos() const;
+    void set_pos(float x, float y, bool facing_right);
 
 private:
     std::shared_ptr<Session> session_;
@@ -42,6 +52,9 @@ private:
     userid_t user_id_;
     std::string username_;
     bool logined_{ false };
+
+    std::pair<float, float> pos_;
+    bool facing_right_;
 };
 
 #endif // __USER_H__
