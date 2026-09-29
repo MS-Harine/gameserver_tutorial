@@ -20,7 +20,7 @@ Socket::~Socket()
 }
 
 Socket::Socket(Socket&& other)
-    : handle_(other.handle_), addr_(other.addr_)
+    : handle_(other.handle_.load()), addr_(other.addr_)
 {
     other.handle_ = INVALID_HANDLE;
 }
@@ -30,7 +30,7 @@ Socket& Socket::operator=(Socket&& other)
     if (this != &other)
     {
         close();
-        handle_ = other.handle_;
+        handle_ = other.handle_.load();
         addr_ = other.addr_;
         other.handle_ = INVALID_HANDLE;
     }
