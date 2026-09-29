@@ -32,12 +32,16 @@ public:
     }
 
     bool send(const std::vector<std::byte>& data);
+    
+    bool is_login() const;
+    void set_login(bool state);
 
 private:
     std::shared_ptr<Session> session_;
     std::atomic<bool> connected_{ true };
     userid_t user_id_;
     std::string username_;
+    bool logined_{ false };
 };
 
 #endif // __USER_H__

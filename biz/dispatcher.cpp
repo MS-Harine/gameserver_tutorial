@@ -80,11 +80,12 @@ void Dispatcher::init_handlers()
 
 Error Dispatcher::handle_connect(std::shared_ptr<User> user, const Packet::C2S_Connect& packet)
 {
-    if (world_->get_user(user->get_user_id()) != nullptr)
+    if (user->is_login() == true)
     {
         return Error::AlreadyLoggedIn;
     }
 
+    user->set_login(true);
     Packet::S2C_Connect send_packet;
     send_packet.userid = user->get_user_id();
     send_packet.username = packet.username;

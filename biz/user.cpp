@@ -31,6 +31,7 @@ bool User::disconnect()
 {
     if (connected_.exchange(false) == false)
         return false;
+    set_login(false);
     session_->close();
     return true;
 }
@@ -38,4 +39,14 @@ bool User::disconnect()
 bool User::send(const std::vector<std::byte>& data)
 {
     return session_->send(data);
+}
+
+bool User::is_login() const
+{
+    return logined_;
+}
+
+void User::set_login(bool state)
+{
+    logined_ = state;
 }
