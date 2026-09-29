@@ -105,6 +105,7 @@ Error Dispatcher::handle_connect(std::shared_ptr<User> user, const Packet::C2S_C
         
         auto user_pos = other_user->get_pos();
         Packet::S2C_SetPosition pos_packet;
+        pos_packet.userid = other_user->get_user_id();
         pos_packet.x = user_pos.x;
         pos_packet.y = user_pos.y;
         pos_packet.facing_right = user_pos.facing_right;
