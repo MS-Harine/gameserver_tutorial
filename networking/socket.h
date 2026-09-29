@@ -10,6 +10,7 @@
 #endif
 
 #include <vector>
+#include <atomic>
 
 class Socket
 {
@@ -41,7 +42,7 @@ public:
     void set_addr(sockaddr_in_t addr);
 
 private:
-    native_handle_t handle_;
+    std::atomic<native_handle_t> handle_;
     sockaddr_in_t addr_;
 };
 

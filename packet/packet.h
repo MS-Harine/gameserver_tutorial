@@ -2,6 +2,15 @@
 #define __PACKET_H__
 
 #include <cstdint>
+#include <cstddef>
+#include <concepts>
+#include <vector>
+
+template <typename T>
+concept PacketType = requires(const T& packet)
+{
+    { packet.serialize() } -> std::same_as<std::vector<std::byte>>;
+};
 
 constexpr const std::size_t MAX_PACKET_SIZE = 65535;
 

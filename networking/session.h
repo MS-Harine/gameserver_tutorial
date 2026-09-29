@@ -1,7 +1,6 @@
 #ifndef __SESSION_H__
 #define __SESSION_H__
 
-#include <any>
 #include <memory>
 #include <vector>
 #include <cstddef>
@@ -21,6 +20,8 @@ public:
     bool send(const std::vector<std::byte>& data);
     void consume_recv_buffer(size_t bytes);
     void consume_send_buffer(size_t bytes);
+
+    bool close();
 
 private:
     std::weak_ptr<Reactor> reactor_;

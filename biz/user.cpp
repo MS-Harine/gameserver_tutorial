@@ -22,10 +22,20 @@ const std::string& User::get_username() const
     return username_;
 }
 
-void User::send(const std::vector<std::byte>& data)
+bool User::is_connected() const
 {
-    if (session_->send(data) == false)
-    {
-        throw std::runtime_error("Failed to send message");
-    }
+    return connected_;
+}
+
+bool User::disconnect()
+{
+    if (connected_.exchange(false) == false)
+        return false;
+    session_->close();
+    return true;
+}
+
+bool User::send(const std::vector<std::byte>& data)
+{
+    return session_->send(data);
 }

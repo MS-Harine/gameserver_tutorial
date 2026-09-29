@@ -42,7 +42,9 @@ std::shared_ptr<User> World::get_user(Socket::native_handle_t sock_handle, raw_t
 
 std::vector<std::shared_ptr<User>> World::get_users() const
 {
+    std::shared_lock<std::shared_mutex> guard(rw_mutex_);
     std::vector<std::shared_ptr<User>> users;
+    users.reserve(users_.size());
     for (auto [_, user] : users_)
     {
         users.push_back(user);
@@ -50,7 +52,7 @@ std::vector<std::shared_ptr<User>> World::get_users() const
     return users;
 }
 
-void World::remove_user(User::userid_t user_id)
+bool World::remove_user(User::userid_t user_id)
 {
     std::unique_lock<std::shared_mutex> guard(rw_mutex_);
     for (auto iter = users_.begin(); iter != users_.end(); ++iter)
@@ -58,9 +60,10 @@ void World::remove_user(User::userid_t user_id)
         if (iter->second->get_user_id() == user_id)
         {
             users_.erase(iter);
-            break;
+            return true;
         }
     }
+    return false;
 }
 
 void World::remove_user(Socket::native_handle_t sock_handle, raw_type)

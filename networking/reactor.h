@@ -22,7 +22,7 @@ public:
     };
 
     // consumed_byte(Session, Transmitted byte, is_write)
-    using EventCallback = std::function<std::size_t(std::shared_ptr<Session>, std::ptrdiff_t, bool)>;
+    using EventCallback = std::function<std::ptrdiff_t(std::shared_ptr<Session>, std::ptrdiff_t, bool)>;
 
 public:
     virtual ~Reactor() = default;
@@ -33,8 +33,8 @@ public:
     virtual bool send(std::shared_ptr<Session> session, const std::vector<std::byte>& data) = 0;
 };
 
-#ifdef WINDOWS
-#else
+#ifdef OS_WINDOWS
+#elif defined(OS_LINUX)
 class Epoll : public Reactor
 {
 public:
@@ -60,8 +60,8 @@ private:
 #endif
 
 using SysPoller =
-#ifdef WINDOWS
-#else
+#ifdef OS_WINDOWS
+#elif defined(OS_LINUX)
     Epoll
 #endif
 ;

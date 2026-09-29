@@ -43,7 +43,7 @@ std::shared_ptr<Socket> Acceptor::accept()
 
 #ifdef OS_WINDOWS
 #else
-    int client_handle = ::accept(socket_->get_native_handle(), (sockaddr*)&addr, &addr_len);
+    int client_handle = ::accept4(socket_->get_native_handle(), (sockaddr*)&addr, &addr_len, SOCK_NONBLOCK | SOCK_CLOEXEC);
     if (client_handle == -1)
         return nullptr;
 #endif

@@ -17,7 +17,8 @@ class User;
 
 enum class Error
 {
-    None
+    None,
+    AlreadyLoggedIn,
 };
 
 template <typename T>
@@ -33,7 +34,7 @@ public:
     Dispatcher(std::shared_ptr<World> world);
 
     void run(std::stop_token token);
-    void add_packet(std::shared_ptr<User> user, const std::vector<std::byte>& packet);
+    void add_packet(std::shared_ptr<User> user, std::vector<std::byte> packet);
 
     template <ValidPacket PacketType, typename HandlerFunc>
     void register_handler(HandlerFunc&& handler)
@@ -60,7 +61,7 @@ private:
     std::shared_ptr<World> world_;
     std::queue<std::pair<std::shared_ptr<User>, std::vector<std::byte>>> packet_queue_;
     std::mutex mutex_;
-    std::condition_variable cv_;
+    std::condition_variable_any cv_;
     std::map<std::uint32_t, std::function<Error(std::shared_ptr<User> user, std::span<const std::byte> payload)>> dispatch_list_;
 };
 

@@ -14,10 +14,10 @@ Bootstraper::~Bootstraper()
     stop();
 }
 
-void Bootstraper::run(int port)
+bool Bootstraper::run(int port)
 {
     initialize_game();
-    initialize_network(port);
+    return initialize_network(port);
 }
 
 void Bootstraper::stop()
@@ -31,17 +31,24 @@ void Bootstraper::stop()
     if (dispatcher_thread_.joinable()) dispatcher_thread_.join();
 }
 
-void Bootstraper::initialize_network(int port)
+bool Bootstraper::initialize_network(int port)
 {
     reactor_ = std::make_shared<SysPoller>();
     acceptor_ = std::make_unique<Acceptor>();
+    if (acceptor_->ready(port, SOMAXCONN) == false)
+    {
+        std::cout << "Acceptor ready failed: " << std::strerror(errno) << std::endl;
+        return false;
+    }
 
-    accept_thread_ = std::jthread([this, port](std::stop_token token) {
-        accept_work(token, port);
+    accept_thread_ = std::jthread([this](std::stop_token token) {
+        accept_work(token);
     });
     reactor_thread_ = std::jthread([this](std::stop_token token) {
         reactor_work(token);
     });
+    
+    return true;
 }
 
 void Bootstraper::initialize_game()
@@ -53,13 +60,8 @@ void Bootstraper::initialize_game()
     });
 }
 
-void Bootstraper::accept_work(std::stop_token token, int port)
+void Bootstraper::accept_work(std::stop_token token)
 {
-    if (acceptor_->ready(port, 5) == false)
-    {
-        throw std::runtime_error("Acceptor ready failed");
-    }
-
     std::shared_ptr<Socket> sock = acceptor_->get_socket();
     std::stop_callback cb(token, [this]() {
         acceptor_->get_socket()->close();
@@ -69,11 +71,24 @@ void Bootstraper::accept_work(std::stop_token token, int port)
     {
         auto client_sock = acceptor_->accept();
         if (client_sock == nullptr)
+        {
+            if (token.stop_requested())
+                break;
+
+            if (errno == EMFILE || errno == ENFILE || errno == ENOBUFS || errno == ENOMEM)
+            {
+                std::this_thread::sleep_for(std::chrono::microseconds(100));
+            }
             continue;
+        }
         
         auto session = std::make_shared<Session>(reactor_, client_sock);
-        reactor_->add(session, Reactor::Event::READ);
-        world_->add_user(session);
+        auto user = world_->add_user(session);
+        if (reactor_->add(session, Reactor::Event::READ) == false)
+        {
+            world_->remove_user(user->get_user_id());
+            continue;
+        }
 
         std::cout << "[CONNECTION] new user socket : " << session->get_sock()->get_native_handle() << std::endl;
     }
@@ -85,7 +100,7 @@ void Bootstraper::reactor_work(std::stop_token token)
         std::shared_ptr<Session> session,
         std::ptrdiff_t byte_transmit, 
         bool is_write
-    ) -> std::size_t 
+    ) -> std::ptrdiff_t 
     {
         if (is_write)
         {
@@ -94,8 +109,7 @@ void Bootstraper::reactor_work(std::stop_token token)
 
         if (byte_transmit <= 0) // Connection closed
         {
-            world_->remove_user(session->get_sock()->get_native_handle(), World::raw_type_t);
-            std::cout << "[CONNECTION] disconnect user socket : " << session->get_sock()->get_native_handle() << std::endl;
+            on_disconnect(session);
             return byte_transmit;
         }
 
@@ -106,8 +120,8 @@ void Bootstraper::reactor_work(std::stop_token token)
             const PacketHeader* header = reinterpret_cast<const PacketHeader*>(buffer.data() + buffer_index);
             if (header->packet_size < sizeof(PacketHeader) || header->packet_size > MAX_PACKET_SIZE)
             {
-                // Invalid packet
-                break;
+                on_disconnect(session);
+                return -1;
             }
 
             if (buffer.size() - buffer_index < header->packet_size)
@@ -124,4 +138,12 @@ void Bootstraper::reactor_work(std::stop_token token)
         
         return buffer_index;
     });
+}
+
+void Bootstraper::on_disconnect(const std::shared_ptr<Session>& session)
+{
+    auto user = world_->get_user(session->get_sock()->get_native_handle(), World::raw_type_t);
+    if (user == nullptr)
+        return;
+    dispatcher_->add_packet(user, Packet::C2S_Disconnect{}.serialize());
 }

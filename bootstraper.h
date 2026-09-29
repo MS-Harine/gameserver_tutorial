@@ -9,21 +9,23 @@ class Reactor;
 class Acceptor;
 class World;
 class Dispatcher;
+class Session;
 
 class Bootstraper
 {
 public:
     Bootstraper();
     ~Bootstraper();
-    void run(int port = 8080);
+    bool run(int port = 8080);
     void stop();
 
 private:
-    void initialize_network(int port);
+    bool initialize_network(int port);
     void initialize_game();
 
-    void accept_work(std::stop_token token, int port);
+    void accept_work(std::stop_token token);
     void reactor_work(std::stop_token token);
+    void on_disconnect(const std::shared_ptr<Session>& session);
 
 private:
     std::shared_ptr<Reactor> reactor_;

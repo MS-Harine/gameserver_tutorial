@@ -12,23 +12,20 @@ Dispatcher::Dispatcher(std::shared_ptr<World> world)
     init_handlers();
 }
 
-void Dispatcher::add_packet(std::shared_ptr<User> user, const std::vector<std::byte>& packet)
+void Dispatcher::add_packet(std::shared_ptr<User> user, std::vector<std::byte> packet)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    packet_queue_.push({ user, packet });
+    packet_queue_.push({ user, std::move(packet) });
     cv_.notify_one();
 }
 
 void Dispatcher::run(std::stop_token token)
 {
-    std::stop_callback cb(token, [this]() {
-        cv_.notify_one();
-    });
-
     while (!token.stop_requested())
     {
         std::unique_lock<std::mutex> lock(mutex_);
-        cv_.wait(lock, [this, &token]() { return !packet_queue_.empty() || token.stop_requested(); });
+        if (cv_.wait(lock, token, [this]() { return !packet_queue_.empty(); }) == false)
+            break;
 
         if (token.stop_requested())
             break;
@@ -50,10 +47,25 @@ void Dispatcher::run(std::stop_token token)
             continue;
         }
 
-        Error result = std::invoke(func_iter->second, user, payload);
+        Error result = Error::None;
+        try
+        {
+            result = std::invoke(func_iter->second, user, payload);
+        }
+        catch(const std::exception& e)
+        {
+            std::cout << "[DISPATCH] Handler throwed exception. ID " << header->packet_id
+                      << " from user " << user->get_user_id() << " : " << e.what() << std::endl;
+            handle_disconnect(user, {});
+            continue;
+        }
+        
         if (result != Error::None)
         {
-            // Error handling
+            std::cout << "[DISPATCH] Handler return error. ID " << header->packet_id
+                      << " from user " << user->get_user_id() << " : " << static_cast<int>(result) << std::endl;
+            handle_disconnect(user, {});
+            continue;
         }
     }
 }
@@ -68,6 +80,11 @@ void Dispatcher::init_handlers()
 
 Error Dispatcher::handle_connect(std::shared_ptr<User> user, const Packet::C2S_Connect& packet)
 {
+    if (world_->get_user(user->get_user_id()) != nullptr)
+    {
+        return Error::AlreadyLoggedIn;
+    }
+
     Packet::S2C_Connect send_packet;
     send_packet.userid = user->get_user_id();
     send_packet.username = packet.username;
@@ -88,12 +105,14 @@ Error Dispatcher::handle_connect(std::shared_ptr<User> user, const Packet::C2S_C
 
 Error Dispatcher::handle_disconnect(std::shared_ptr<User> user, [[ maybe_unused ]] const Packet::C2S_Disconnect& packet)
 {
+    user->disconnect();
+    if (world_->remove_user(user->get_user_id()) == false)
+        return Error::None;
+
     Packet::S2C_Disconnect send_packet;
     send_packet.userid = user->get_user_id();
-    send_packet.reason = "Client request";
-
-    world_->broadcast(send_packet);
-    
+    send_packet.reason = "Client disconnected";
+    world_->broadcast_except_user(send_packet, user);
     return Error::None;
 }
 

@@ -1,8 +1,11 @@
 CXX = g++
 CXXFLAGS = -std=c++20 -Wall -Wextra -O2 -g
 
+# Header dependencies
+CXXFLAGS += -MMD -MP
+
 # Automatically find all directories (excluding hidden directories like .git) to add to include paths
-INC_DIRS := $(shell find . -type d -not -path '*/.*')
+INC_DIRS := $(shell find . -type d -not -path '*/.*' -not -path './obj*' -not -path './bin*')
 INC_FLAGS := $(addprefix -I, $(INC_DIRS))
 
 # Automatically find all .cpp source files in the project recursively
@@ -38,3 +41,5 @@ clean:
 	rm -rf $(OBJDIR) $(TARGET_DIR)
 
 .PHONY: all clean
+
+-include $(OBJS:.o=.d)

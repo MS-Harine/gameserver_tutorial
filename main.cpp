@@ -16,7 +16,9 @@ int main()
     std::signal(SIGPIPE, SIG_IGN);
 
     Bootstraper bootstraper;
-    bootstraper.run(8080);
+    if (bootstraper.run(8080) == false)
+        return 1;
+    
     while (g_stop_flag == false) g_stop_flag.wait(false);
     bootstraper.stop();
 
